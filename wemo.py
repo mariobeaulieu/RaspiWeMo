@@ -21,11 +21,49 @@ while s not in env.list_switches():
 print ("Found switch "+s)
 L=env.get_switch(s)
 
+status=L.get_state()
+action='OFF'
+change=1
+
 while True:
   if hour_ON == time.localtime().tm_hour and min_ON == time.localtime().tm_min:
-    L.on()
-    print (str(time.localtime().tm_hour)+"h"+str(time.localtime().tm_min)+"m : WeMo now ON")
+    action='ON'
+    change=1
   if hour_OFF == time.localtime().tm_hour and min_OFF == time.localtime().tm_min:
-    L.off()
-    print (str(time.localtime().tm_hour)+"h"+str(time.localtime().tm_min)+"m : WeMo now OFF")
+    action='OFF'
+    change=1
+
+  error=0
+  if action == 'ON' and status == 0:
+    try:
+      L.on()
+      status=1
+    except:
+      error=1
+
+  if action == 'OFF' and status == 1:
+    try:
+      L.off()
+      status=0
+    except:
+      error=1
+
+  if error==0:
+    if change==1:
+      print (str(time.localtime().tm_mon )+"-"+\
+             str(time.localtime().tm_mday)+" "+\
+             str(time.localtime().tm_hour)+"h"+\
+             str(time.localtime().tm_min )+"m : WeMo now "+action)
+      change=0
+  else:
+    print ("Re-acquiring switch... Waiting for switch discovery")
+    t=0
+    while s not in env.list_switches():
+      env.discover()
+      t+=1
+      print t
+    print ("Found switch "+s)
+    L=env.get_switch(s)
+
   time.sleep(60)
+
