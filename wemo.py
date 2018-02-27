@@ -2,8 +2,8 @@
 from ouimeaux.environment import Environment as E
 import time
 
-hour_ON=17
-min_ON=45
+hour_ON=18
+min_ON=0
 hour_OFF=22
 min_OFF=0
 
@@ -37,14 +37,16 @@ while True:
   if action == 'ON' and status == 0:
     try:
       L.on()
-      status=1
+      time.sleep(10)
+      status=L.get_state()
     except:
       error=1
 
   if action == 'OFF' and status == 1:
     try:
       L.off()
-      status=0
+      time.sleep(10)
+      status=L.get_state()
     except:
       error=1
 
@@ -54,7 +56,8 @@ while True:
              str(time.localtime().tm_mday)+" "+\
              str(time.localtime().tm_hour)+"h"+\
              str(time.localtime().tm_min )+"m : WeMo now "+action)
-      change=0
+      if ( action == 'ON' and status == 1 ) or ( action == 'OFF' and status == 0 ):
+        change=0
   else:
     print ("Re-acquiring switch... Waiting for switch discovery")
     t=0
