@@ -1,11 +1,15 @@
 #!/usr/bin/python
 from ouimeaux.environment import Environment as E
+from astral import Astral
 import time
+import datetime
+import sys
 
-hour_ON=18
-min_ON=0
-hour_OFF=22
-min_OFF=0
+a=Astral()
+a.solar_depression='civil'
+city=a['Ottawa']
+today=0
+
 
 s='WeMo Light Switch'
 env=E()
@@ -22,51 +26,60 @@ print ("Found switch "+s)
 L=env.get_switch(s)
 
 status=L.get_state()
-action='OFF'
-change=1
 
 while True:
-  if hour_ON == time.localtime().tm_hour and min_ON == time.localtime().tm_min:
-    action='ON'
-    change=1
-  if hour_OFF == time.localtime().tm_hour and min_OFF == time.localtime().tm_min:
-    action='OFF'
-    change=1
+
+  change=0
+  time_now=datetime.datetime.now().replace(tzinfo=None)
+
+  if time_now.date() != today:
+     today = time_now.date()
+     dusk = city.sun()['dusk'].replace(tzinfo=None)
+     time_ON = dusk
+     time_OFF= time_ON + datetime.timedelta(hours=3)
+     print s," will turn ON at ",time_ON, " and OFF at ",time_OFF
+
+  if time_ON < time_now and time_now < time_OFF:
+    if status == 0:
+      action='ON'
+      change=1
+  else:
+    if status == 1:
+      action='OFF'
+      change=1
 
   error=0
-  if action == 'ON' and status == 0:
-    try:
-      L.on()
-      time.sleep(10)
-      status=L.get_state()
-    except:
-      error=1
+  if change == 1:
+    if status == 0:
+      try:
+        L.on()
+        status=1
+      except:
+        error=1
+        print "Eror: ", sys.exc_info()[0]
+    else:
+      try:
+        L.off()
+        status=0
+      except:
+        error=1
+        print "Eror: ", sys.exc_info()[0]
 
-  if action == 'OFF' and status == 1:
-    try:
-      L.off()
-      time.sleep(10)
-      status=L.get_state()
-    except:
-      error=1
-
-  if error==0:
-    if change==1:
+    if error==0:
       print (str(time.localtime().tm_mon )+"-"+\
              str(time.localtime().tm_mday)+" "+\
              str(time.localtime().tm_hour)+"h"+\
              str(time.localtime().tm_min )+"m : WeMo now "+action)
-      if ( action == 'ON' and status == 1 ) or ( action == 'OFF' and status == 0 ):
-        change=0
-  else:
-    print ("Re-acquiring switch... Waiting for switch discovery")
-    t=0
-    while s not in env.list_switches():
-      env.discover()
-      t+=1
-      print t
-    print ("Found switch "+s)
-    L=env.get_switch(s)
+    else:
+      print ("Re-acquiring switch... Waiting for switch discovery")
+      t=0
+      while s not in env.list_switches():
+        env.discover()
+        t+=1
+        print t
+      print ("Found switch "+s)
+      L=env.get_switch(s)
+      status=L.get_state()
 
   time.sleep(60)
 
