@@ -5,26 +5,26 @@ import time
 import datetime
 import sys
 
+def reacquire(env, device):
+  print "Waiting for discovery of ", device
+  t=0
+  while device not in env.list_switches():
+    env.discover()
+    t+=1
+    print t
+  print "Found switch ", device
+
 a=Astral()
 a.solar_depression='civil'
 city=a['Ottawa']
 today=0
 
-
 s='WeMo Light Switch'
 env=E()
 env.start()
 
-print ("Waiting for switch discovery")
-t=0
-while s not in env.list_switches():
-  env.discover()
-  t+=1
-  print t
-
-print ("Found switch "+s)
+reacquire(env, s)
 L=env.get_switch(s)
-
 status=L.get_state()
 
 while True:
@@ -40,10 +40,12 @@ while True:
      print s," will turn ON at ",time_ON, " and OFF at ",time_OFF
 
   if time_ON < time_now and time_now < time_OFF:
+    print "ON time:",time_now," status=",status
     if status == 0:
       action='ON'
       change=1
   else:
+    print "OFF time:",time_now," status=",status
     if status == 1:
       action='OFF'
       change=1
@@ -51,19 +53,21 @@ while True:
   error=0
   if change == 1:
     if status == 0:
+      print "Turning ON"
       try:
         L.on()
         status=1
       except:
         error=1
-        print "Eror: ", sys.exc_info()[0]
+        print "Error: ", sys.exc_info()[0]
     else:
+      print "Turning OFF"
       try:
         L.off()
         status=0
       except:
         error=1
-        print "Eror: ", sys.exc_info()[0]
+        print "Error: ", sys.exc_info()[0]
 
     if error==0:
       print (str(time.localtime().tm_mon )+"-"+\
@@ -71,13 +75,7 @@ while True:
              str(time.localtime().tm_hour)+"h"+\
              str(time.localtime().tm_min )+"m : WeMo now "+action)
     else:
-      print ("Re-acquiring switch... Waiting for switch discovery")
-      t=0
-      while s not in env.list_switches():
-        env.discover()
-        t+=1
-        print t
-      print ("Found switch "+s)
+      reacquire(env, s)
       L=env.get_switch(s)
       status=L.get_state()
 
