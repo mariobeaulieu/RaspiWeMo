@@ -1,4 +1,19 @@
 #!/usr/bin/python
+
+# Developed by Mario Beaulieu, 2017
+#
+# This program has been developed to run on a Raspberry Pi
+# I didn't try it on other platforms, but it should work as well.
+#
+# The program controls a WeMo wall switch.
+# I use it to turn ON the lights outside my house at dusk, and turn
+# them OFF 3 hours later
+#
+# Before running it, you'll need to install the python libraries
+# astral and ouimeaux.
+# To customize it, you'll need to change the city Ottawa for yours
+# and you can change the time_ON and time_OFF
+#
 from ouimeaux.environment import Environment as E
 from astral import Astral
 import time
